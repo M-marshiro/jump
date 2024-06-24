@@ -1,106 +1,523 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doodle Jump JavaScript</title>
-    <!-- Tải thư viện p5.js từ CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <title>Doodle Jump Clone</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+    </style>
 </head>
 <body>
-    <!-- Chúng ta có thể thêm nội dung khác vào đây nếu cần -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script>
-        // Đoạn mã JavaScript của bạn bắt đầu từ đây
-        var gravity = 1;
-        var keyDown = [];
-        var groundY = 350;
+        // Doodle Jump Clone JavaScript Code
+        //modeled after doodle jump, and all credit (excluding code)
+        //belongs to lima sky
+        //download doodle jump now for your mobile device!!!
 
-        // Đối tượng Monster
-        var Monster = function(x, y) {
-            this.x = x;
-            this.y = y;
-            this.isLeft = false;
-            this.sprite = getImage("avatars/duskpin-sapling");
-            this.scale = 1;
-            this.width = 30;
-            this.height = 30;
-        };
+        /*****
+        *** Doodle Jump as made by Nordituck
+        * 
+        * 
+        *****/
+
+        /* 
+        -=-=-=-=-=-=-=-=-=-=-
+        Use left/right arrow keys to move
+        Up arrow to shoot
+        Avoid monsters, or shoot and jump on them
+        Collect powerups
+        Jump as high as you can!
+        */
+
+        /* WARNING! -----
+        Game may not work as desired if you play with these variables*/ 
+        var terminal_velocity=4;
+        var gravity=0.15;
+        /*--------*/
         
-        Monster.prototype.display = function() {
-            pushMatrix();
-            translate(this.x, this.y);
-            scale(this.isLeft ? -this.scale : this.scale, this.scale);
-            image(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
-            popMatrix();
-        };
+        frameRate(60);
+        
+        var keyDown=[6];
+        var star;
+        var gameScore=0;
 
-        // Đối tượng Char (Nhân vật)
-        var Char = function(x, y) {
-            this.x = x;
-            this.y = y;
-            this.xSpeed = 2;
-            this.ySpeed = 2;
-            this.width = 10;
-            this.height = 10;
-            this.isLeft = false;
-            this.sprite = getImage("avatars/aqualine-sapling");
-            this.jumpHeight = 5;
-        };
+        // Preload images
+        function preload() {
+            star = loadImage('https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Star_icon-72a7cf.svg/120px-Star_icon-72a7cf.svg.png'); // Example star image
+        }
 
-        Char.prototype.display = function() {
-            pushMatrix();
-            translate(this.x, this.y);
-            scale(this.isLeft ? -1 : 1, 1);
-            image(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
-            popMatrix();
-        };
-
-        Char.prototype.update = function() {
-            this.ySpeed += gravity;
-            this.y += this.ySpeed;
-
-            if (keyDown[RIGHT]) {
-                this.isLeft = false;
-                this.x += this.xSpeed;
-            }
-            if (keyDown[LEFT]) {
-                this.isLeft = true;
-                this.x -= this.xSpeed;
-            }
-            if (this.y > groundY) {
-                this.ySpeed = -this.jumpHeight;
-                this.y = groundY;
-            }
-        };
-
-        var player = new Char(200, 200);
-        var monster = new Monster(20, 20);
-
+        // Setup canvas
         function setup() {
-            createCanvas(400, 400);
+            createCanvas(400, 600);
             frameRate(60);
         }
 
         function draw() {
-            background(0);
-            fill(255, 255, 255);
-            stroke(255, 0, 0);
-            rect(0, groundY, width, height);
-            fill(255, 0, 255);
-            text("Doodle Jump!", 10, 20);
+            background(200); // Example background color
+            // Add your game loop code here
+        }
+
+        //for all the little lovable doodle monsters 
+        var Monster = function(x, y, type, enviroment) {
+            this.type=type; //kind of monster
+            this.x=x; //x coord
+            this.y=y; //y coord
+            this.x_veloc=0; //velocities
+            this.y_veloc=0;
+            this.facing=1; //is it facing left(-1) or right(1)
+            this.env=enviroment; //the level it's currently in
             
-            player.update();
-            player.display();
-            monster.display();
-        }
+            switch(this.type) {
+                //blue floaty monster
+                case 1: 
+                    this.w=25;
+                    this.h=30;
+                    this.x_veloc=2;
+                    break;
+                //green jumpy monster
+                case 2:
+                    this.w=55;
+                    this.h=40;
+                    break;
+                default:
+                    break;
+            }
+        };
 
-        function keyPressed() {
-            keyDown[keyCode] = true;
-        }
+        //draw 'em
+        Monster.prototype.display = function() {
+            switch(this.type) {
+                //blue
+                case 1:
+                    fill(0, 98, 255);
+                    push();
+                    translate(this.x+this.w/2,this.y+this.h/2);
+                    scale(-this.facing,1);
+                    translate(-this.w/2,-this.h/2);
+                    rect(0,0,this.w,this.h,6);
+                    strokeWeight(0.3);
+                    arc(this.w/2+0.5,5,this.w-1,15,-180,0);
+                    arc(5,this.h,5,8,0,180);
+                    arc(20,this.h,5,8,0,180);
+                    strokeWeight(1);
+                    fill(207, 193, 37);
+                    ellipse(9,10,12,12);
+                    ellipse(9,10,1,1);
+                    fill(95, 72, 150);
+                    arc(3,19,5,8,0,180);
+                    arc(8,19,5,8,0,180);
+                    arc(13,19,5,8,0,180);
+                    line(1,19,17,19);
+                    pop();
+                    break; 
+                //green
+                case 2:
+                    fill(47, 120, 64);  
+                    ellipse(this.x+(this.w*0.2),this.y+(this.h*1.04),4,6);
+                    ellipse(this.x+(this.w*0.4),this.y+(this.h*1.04),4,6);
+                    ellipse(this.x+(this.w*0.6),this.y+(this.h*1.04),4,6);
+                    ellipse(this.x+(this.w*0.84),this.y+(this.h*1.04),4,6);
+                    rect(this.x+(this.w*0.1),this.y+(this.h*0.4),this.w*0.8,this.h*0.6,10);
+                    fill(235, 242, 177);
+                    ellipse(this.x+(this.w*0.3),this.y+(this.h*0.83),6,6);
+                    ellipse(this.x+(this.w*0.5),this.y+(this.h*0.76),4,9);
+                    ellipse(this.x+(this.w*0.7),this.y+(this.h*0.80),4,7);
+                    fill(115, 186, 58);
+                    beginShape();
+                    curveVertex(this.x+(this.w*0.8),this.y+(this.h*0.8));
+                    curveVertex(this.x,this.y+(this.h*0.8));
+                    curveVertex(this.x+(this.w*0.2),this.y+(this.h*0.2));
+                    curveVertex(this.x+(this.w*0.5),this.y+(this.h*0.1));
+                    curveVertex(this.x+(this.w*0.8),this.y+(this.h*0.2));
+                    curveVertex(this.x+this.w,this.y+(this.h*0.8));
+                    curveVertex(this.x+(this.w*0.8),this.y+(this.h*0.8));
+                    curveVertex(this.x+(this.w*0.6),this.y+(this.h*0.75));
+                    curveVertex(this.x+(this.w*0.3),this.y+(this.h*0.8));
+                    curveVertex(this.x,this.y+(this.h*0.8));
+                    curveVertex(this.x,this.y+(this.h*0.8));
+                    endShape();
+                    fill(237, 212, 113);
+                    ellipse(this.x+(this.w*0.5),this.y+(this.h*0.35),6,7);
+                    ellipse(this.x+(this.w*0.25),this.y+(this.h*0.5),8,9);
+                    ellipse(this.x+(this.w*0.75),this.y+(this.h*0.5),8,9);
+                    fill(0, 0, 0);
+                    ellipse(this.x+(this.w*0.5),this.y+(this.h*0.35),1,1);
+                    ellipse(this.x+(this.w*0.25),this.y+(this.h*0.5),1,1);
+                    ellipse(this.x+(this.w*0.75),this.y+(this.h*0.5),1,1);
+                    ellipse(this.x+(this.w*0.45),this.y+(this.h*0.6),1,1);
+                    ellipse(this.x+(this.w*0.55),this.y+(this.h*0.6),1,1);
+                    break;
+                //if something spazzes
+                default: 
+                    text("x_error",this.x,this.y);
+                    break;
+            }
+        };
 
-        function keyReleased() {
-            keyDown[keyCode] = false;
-        }
-    </script>
-</body>
-</html>
+        //move monster by its velocities respectively
+        Monster.prototype.move = function() {
+            this.x += this.x_veloc;
+            this.y -= this.y_veloc;
+        };
+
+        Monster.prototype.collide = function() {
+            switch(this.type) {
+                case 1:
+                    //if runs into sides, change direction
+                    if(this.x < 5 || this.x > 380) {
+                        this.x_veloc = -this.x_veloc;
+                        this.facing = -this.facing;
+                    }
+                    //and bounce up and down
+                    this.y_veloc = sin(frameCount * 15);
+                    break;
+                case 2:
+                    //check all platforms to bounce off of
+                    for(var i = 0; i < this.env.data.length; i++) {
+                        //if on, bounce
+                        if(this.x < this.env.data[i][0] + this.env.barwidth && this.x + this.w > this.env.data[i][0] && this.y + this.h > this.env.data[i][1] && this.y + this.h < this.env.data[i][1] + 5 && this.y_veloc < 0) {
+                            this.y_veloc = 3;
+                        }
+                    }
+                    //get pulled down, as long as less than terminal velocity
+                    if(this.y_veloc > -terminal_velocity) {
+                        this.y_veloc -= gravity;
+                    }
+                    //if hits a wall, change direction
+                    if(this.x < 5 || this.x > 380) {
+                        this.x_veloc = -this.x_veloc;
+                        this.facing = -this.facing;
+                    }
+                    //if hits bottom of screen, poof
+                    if(this.y > 600) {
+                        this.x = -100;
+                        this.y = -100;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        //for all the powerups in game
+        var Powerup = function(x, y, type) {
+            this.type = type; //kind of powerup
+            this.x = x; //x coord
+            this.y = y; //y coord
+            this.fall = 0; //y_velocity
+            
+            switch(this.type) {
+                //trampoline
+                case 1: 
+                    this.w = 40;
+                    this.h = 15;
+                    break;
+                //rocket
+                case 2:
+                    this.w = 15;
+                    this.h = 45;
+                    break;
+                //springs
+                case 3:
+                    this.w = 10;
+                    this.h = 15;
+                    break;
+                //cape
+                case 4:
+                    this.w = 15;
+                    this.h = 20;
+                    break;
+                //star
+                case 5:
+                    this.w = 30;
+                    this.h = 30;
+                    break;
+                //helmet
+                case 6:
+                    this.w = 20;
+                    this.h = 15;
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        //display the powerup based on type
+        Powerup.prototype.display = function() {
+            switch(this.type) {
+                case 1:
+                    fill(161, 28, 187);
+                    rect(this.x, this.y + 15, this.w, this.h, 10);
+                    fill(171, 108, 224);
+                    beginShape();
+                    vertex(this.x, this.y + this.h);
+                    vertex(this.x + this.w * 0.1, this.y + this.h * 0.75);
+                    vertex(this.x + this.w * 0.2, this.y + this.h * 0.5);
+                    vertex(this.x + this.w * 0.3, this.y + this.h * 0.25);
+                    vertex(this.x + this.w * 0.4, this.y);
+                    vertex(this.x + this.w * 0.5, this.y + this.h * 0.25);
+                    vertex(this.x + this.w * 0.6, this.y + this.h * 0.5);
+                    vertex(this.x + this.w * 0.7, this.y + this.h * 0.75);
+                    vertex(this.x + this.w * 0.8, this.y + this.h);
+                    vertex(this.x + this.w * 0.9, this.y + this.h * 1.25);
+                    vertex(this.x + this.w, this.y + this.h * 1.5);
+                    endShape();
+                    break;
+                case 2:
+                    fill(224, 62, 54);
+                    rect(this.x, this.y, this.w, this.h, 5);
+                    fill(241, 207, 48);
+                    triangle(this.x, this.y + 1, this.x + this.w, this.y + 1, this.x + this.w * 0.5, this.y - 10);
+                    break;
+                case 3:
+                    fill(237, 151, 18);
+                    rect(this.x, this.y, this.w, this.h, 2);
+                    break;
+                case 4:
+                    fill(194, 26, 26);
+                    beginShape();
+                    vertex(this.x + 1, this.y + 2);
+                    vertex(this.x + 4, this.y + 12);
+                    vertex(this.x + 5, this.y + 20);
+                    vertex(this.x + 6, this.y + 25);
+                    vertex(this.x + 7, this.y + 30);
+                    vertex(this.x + 8, this.y + 32);
+                    vertex(this.x + 9, this.y + 32);
+                    vertex(this.x + 10, this.y + 30);
+                    vertex(this.x + 11, this.y + 27);
+                    vertex(this.x + 12, this.y + 24);
+                    vertex(this.x + 13, this.y + 20);
+                    vertex(this.x + 14, this.y + 12);
+                    vertex(this.x + 17, this.y + 2);
+                    endShape();
+                    break;
+                case 5:
+                    image(star, this.x, this.y, this.w, this.h);
+                    break;
+                case 6:
+                    fill(214, 188, 13);
+                    arc(this.x, this.y, this.w, this.h, 180, 360);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        //move the powerup
+        Powerup.prototype.move = function() {
+            this.y += this.fall;
+        };
+
+        //check for collision
+        Powerup.prototype.collide = function() {
+            if(this.y + this.h >= 600) {
+                this.y = 600 - this.h;
+            }
+        };
+
+        //for all the platforms in the game
+        var Platform = function(x, y, type) {
+            this.x = x; //x coord
+            this.y = y; //y coord
+            this.type = type; //type of platform
+            this.w = 60; //width
+            this.h = 15; //height
+            this.fall = 0; //falling velocity
+            this.spring = new Powerup(this.x + this.w * 0.4, this.y - 15, 3); //a spring for springboard platforms
+        };
+
+        //draw platform
+        Platform.prototype.display = function() {
+            switch(this.type) {
+                //regular platform
+                case 1:
+                    fill(28, 171, 0);
+                    rect(this.x, this.y, this.w, this.h, 10);
+                    break;
+                //springboard
+                case 2:
+                    fill(28, 171, 0);
+                    rect(this.x, this.y, this.w, this.h, 10);
+                    this.spring.display();
+                    break;
+                default:
+                    fill(28, 171, 0);
+                    rect(this.x, this.y, this.w, this.h, 10);
+                    break;
+            }
+        };
+
+        //move platform and spring
+        Platform.prototype.move = function() {
+            this.y += this.fall;
+            this.spring.y = this.y - 15;
+        };
+
+        //platform collision checks
+        Platform.prototype.collide = function() {
+            //collision with bottom of screen
+            if(this.y + this.h >= 600) {
+                this.y = 600 - this.h;
+            }
+            //collision with springs
+            this.spring.collide();
+        };
+
+        //game environment
+        var Environment = function(x, y, platforms) {
+            this.x = x; //x coord
+            this.y = y; //y coord
+            this.data = []; //array of platforms
+            this.barwidth = 60; //platform width
+            this.barheight = 15; //platform height
+            this.velocity = 2; //velocity of screen moving up
+            
+            //load initial platforms
+            for(var i = 0; i < platforms; i++) {
+                var type = round(random(1,2)); //random platform type
+                var platform = new Platform(random(0,340), i * 100, type);
+                this.data.push(platform);
+            }
+        };
+
+        //draw all platforms
+        Environment.prototype.display = function() {
+            for(var i = 0; i < this.data.length; i++) {
+                this.data[i].display();
+            }
+        };
+
+        //move all platforms
+        Environment.prototype.move = function() {
+            for(var i = 0; i < this.data.length; i++) {
+                this.data[i].move();
+            }
+        };
+
+        //check all platform collisions
+        Environment.prototype.collide = function() {
+            for(var i = 0; i < this.data.length; i++) {
+                this.data[i].collide();
+            }
+        };
+
+        //main player character
+        var Player = function(x, y, environment) {
+            this.x = x; //x coord
+            this.y = y; //y coord
+            this.x_veloc = 0; //x velocity
+            this.y_veloc = 0; //y velocity
+            this.width = 20; //width
+            this.height = 30; //height
+            this.env = environment; //level environment
+            this.lives = 3; //number of lives
+            this.score = 0; //player score
+            this.face = 1; //facing left(-1) or right(1)
+            this.weapon = false; //has weapon?
+            this.rockets = 0; //number of rockets
+            this.shield = false; //has shield?
+        };
+
+        //draw the player
+        Player.prototype.display = function() {
+            fill(227, 227, 54);
+            rect(this.x, this.y, this.width, this.height, 10);
+        };
+
+        //move the player
+        Player.prototype.move = function() {
+            this.x += this.x_veloc;
+            this.y -= this.y_veloc;
+            //gravity
+            if(this.y_veloc > -6) {
+                this.y_veloc -= 0.1;
+            }
+            //collisions with platforms
+            for(var i = 0; i < this.env.data.length; i++) {
+                if(this.y + this.height >= this.env.data[i].y && this.y <= this.env.data[i].y + this.env.data[i].h &&
+                   this.x + this.width >= this.env.data[i].x && this.x <= this.env.data[i].x + this.env.data[i].w) {
+                    if(this.y + this.height <= this.env.data[i].y + 5) {
+                        this.y_veloc = 5;
+                    }
+                }
+            }
+            //collisions with screen edges
+            if(this.x <= 0) {
+                this.x = 0;
+            }
+            if(this.x + this.width >= 400) {
+                this.x = 400 - this.width;
+            }
+            //collisions with screen bottom
+            if(this.y + this.height >= 600) {
+                this.y = 600 - this.height;
+            }
+        };
+
+        //shoot bullets
+        Player.prototype.shoot = function() {
+            if(this.weapon) {
+                //create new bullet
+                var bullet = new Bullet(this.x + this.width * 0.5, this.y, this.face);
+                this.env.data.push(bullet);
+            }
+        };
+
+        //game loop
+        var game = function() {
+            //create environment
+            var env = new Environment(0, 0, 10);
+            var player = new Player(200, 300, env);
+            
+            //game loop
+            var loop = function() {
+                //clear screen
+                background(200, 200, 200);
+                
+                //move and display player
+                player.move();
+                player.display();
+                
+                //move and display environment
+                env.move();
+                env.display();
+                
+                //check collisions
+                env.collide();
+                
+                //update score
+                fill(0);
+                text("Score: " + player.score, 10, 20);
+                
+                //update lives
+                text("Lives: " + player.lives, 10, 40);
+                
+                //request next frame
+                requestAnimationFrame(loop);
+            };
+            
+            //start game loop
+            loop();
+        };
+
+        //start game
+        game();
+    }
+};
+
+//start sketch
+new p5(sketch);
+</script>
