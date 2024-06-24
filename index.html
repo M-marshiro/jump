@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodle Jump JavaScript</title>
+    <!-- Tải thư viện p5.js từ CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <!-- Chúng ta có thể thêm nội dung khác vào đây nếu cần -->
+    <script>
+        // Đoạn mã JavaScript của bạn bắt đầu từ đây
+        var gravity = 1;
+        var keyDown = [];
+        var groundY = 350;
+
+        // Đối tượng Monster
+        var Monster = function(x, y) {
+            this.x = x;
+            this.y = y;
+            this.isLeft = false;
+            this.sprite = getImage("avatars/duskpin-sapling");
+            this.scale = 1;
+            this.width = 30;
+            this.height = 30;
+        };
+        
+        Monster.prototype.display = function() {
+            pushMatrix();
+            translate(this.x, this.y);
+            scale(this.isLeft ? -this.scale : this.scale, this.scale);
+            image(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
+            popMatrix();
+        };
+
+        // Đối tượng Char (Nhân vật)
+        var Char = function(x, y) {
+            this.x = x;
+            this.y = y;
+            this.xSpeed = 2;
+            this.ySpeed = 2;
+            this.width = 10;
+            this.height = 10;
+            this.isLeft = false;
+            this.sprite = getImage("avatars/aqualine-sapling");
+            this.jumpHeight = 5;
+        };
+
+        Char.prototype.display = function() {
+            pushMatrix();
+            translate(this.x, this.y);
+            scale(this.isLeft ? -1 : 1, 1);
+            image(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
+            popMatrix();
+        };
+
+        Char.prototype.update = function() {
+            this.ySpeed += gravity;
+            this.y += this.ySpeed;
+
+            if (keyDown[RIGHT]) {
+                this.isLeft = false;
+                this.x += this.xSpeed;
+            }
+            if (keyDown[LEFT]) {
+                this.isLeft = true;
+                this.x -= this.xSpeed;
+            }
+            if (this.y > groundY) {
+                this.ySpeed = -this.jumpHeight;
+                this.y = groundY;
+            }
+        };
+
+        var player = new Char(200, 200);
+        var monster = new Monster(20, 20);
+
+        function setup() {
+            createCanvas(400, 400);
+            frameRate(60);
+        }
+
+        function draw() {
+            background(0);
+            fill(255, 255, 255);
+            stroke(255, 0, 0);
+            rect(0, groundY, width, height);
+            fill(255, 0, 255);
+            text("Doodle Jump!", 10, 20);
+            
+            player.update();
+            player.display();
+            monster.display();
+        }
+
+        function keyPressed() {
+            keyDown[keyCode] = true;
+        }
+
+        function keyReleased() {
+            keyDown[keyCode] = false;
+        }
+    </script>
+</body>
+</html>
